@@ -1,6 +1,8 @@
-import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons"
+import React from 'react'
+import { ViewIcon, ViewOffIcon } from '@chakra-ui/icons'
 import {
   Button,
+  Center,
   Container,
   FormControl,
   FormErrorMessage,
@@ -10,27 +12,26 @@ import {
   InputGroup,
   InputRightElement,
   Link,
-  Text,
   useBoolean,
-} from "@chakra-ui/react"
+} from '@chakra-ui/react'
 import {
   Link as RouterLink,
   createFileRoute,
   redirect,
-} from "@tanstack/react-router"
-import { type SubmitHandler, useForm } from "react-hook-form"
+} from '@tanstack/react-router'
+import { SubmitHandler, useForm } from 'react-hook-form'
 
-import Logo from "/assets/images/fastapi-logo.svg"
-import type { Body_login_login_access_token as AccessToken } from "../client"
-import useAuth, { isLoggedIn } from "../hooks/useAuth"
-import { emailPattern } from "../utils"
+import Logo from '../assets/images/boat.png'
+import { ApiError } from '../client'
+import { Body_login_login_access_token as AccessToken } from '../client/models/Body_login_login_access_token'
+import useAuth, { isLoggedIn } from '../hooks/useAuth'
 
-export const Route = createFileRoute("/login")({
+export const Route = createFileRoute('/login')({
   component: Login,
   beforeLoad: async () => {
     if (isLoggedIn()) {
       throw redirect({
-        to: "/",
+        to: '/',
       })
     }
   },
@@ -38,29 +39,27 @@ export const Route = createFileRoute("/login")({
 
 function Login() {
   const [show, setShow] = useBoolean()
-  const { loginMutation, error, resetError } = useAuth()
+  const { login } = useAuth()
+  const [error, setError] = React.useState<string | null>(null)
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<AccessToken>({
-    mode: "onBlur",
-    criteriaMode: "all",
+    mode: 'onBlur',
+    criteriaMode: 'all',
     defaultValues: {
-      username: "",
-      password: "",
+      username: '',
+      password: '',
     },
   })
 
   const onSubmit: SubmitHandler<AccessToken> = async (data) => {
-    if (isSubmitting) return
-
-    resetError()
-
     try {
-      await loginMutation.mutateAsync(data)
-    } catch {
-      // error is handled by useAuth hook
+      await login(data)
+    } catch (err) {
+      const errDetail = (err as ApiError).body.detail
+      setError(errDetail)
     }
   }
 
@@ -87,13 +86,14 @@ function Login() {
         <FormControl id="username" isInvalid={!!errors.username || !!error}>
           <Input
             id="username"
-            {...register("username", {
-              required: "Username is required",
-              pattern: emailPattern,
+            {...register('username', {
+              pattern: {
+                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i,
+                message: 'Invalid email address',
+              },
             })}
             placeholder="Email"
             type="email"
-            required
           />
           {errors.username && (
             <FormErrorMessage>{errors.username.message}</FormErrorMessage>
@@ -102,23 +102,19 @@ function Login() {
         <FormControl id="password" isInvalid={!!error}>
           <InputGroup>
             <Input
-              {...register("password", {
-                required: "Password is required",
-              })}
-              type={show ? "text" : "password"}
+              {...register('password')}
+              type={show ? 'text' : 'password'}
               placeholder="Password"
-              required
             />
             <InputRightElement
-              color="ui.dim"
+              color="gray.400"
               _hover={{
-                cursor: "pointer",
+                cursor: 'pointer',
               }}
             >
               <Icon
-                as={show ? ViewOffIcon : ViewIcon}
                 onClick={setShow.toggle}
-                aria-label={show ? "Hide password" : "Show password"}
+                aria-label={show ? 'Hide password' : 'Show password'}
               >
                 {show ? <ViewOffIcon /> : <ViewIcon />}
               </Icon>
@@ -126,19 +122,23 @@ function Login() {
           </InputGroup>
           {error && <FormErrorMessage>{error}</FormErrorMessage>}
         </FormControl>
-        <Link as={RouterLink} to="/recover-password" color="blue.500">
-          Forgot password?
-        </Link>
-        <Button variant="primary" type="submit" isLoading={isSubmitting}>
+        <Center>
+          <Link as={RouterLink} to="/recover-password" color="blue.500">
+            Forgot password?
+          </Link>
+        </Center>
+        <Button
+          bg="ui.main"
+          color="white"
+          _hover={{ opacity: 0.8 }}
+          type="submit"
+          isLoading={isSubmitting}
+        >
           Log In
         </Button>
-        <Text>
-          Don't have an account?{" "}
-          <Link as={RouterLink} to="/signup" color="blue.500">
-            Sign up
-          </Link>
-        </Text>
       </Container>
     </>
   )
 }
+
+export default Login

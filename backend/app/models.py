@@ -1,95 +1,94 @@
-import uuid
-
-from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
 
 
 # Shared properties
+# TODO replace email str with EmailStr when sqlmodel supports it
 class UserBase(SQLModel):
-    email: EmailStr = Field(unique=True, index=True, max_length=255)
+    email: str = Field(unique=True, index=True)
     is_active: bool = True
     is_superuser: bool = False
-    full_name: str | None = Field(default=None, max_length=255)
+    full_name: str | None = None
 
 
 # Properties to receive via API on creation
 class UserCreate(UserBase):
-    password: str = Field(min_length=8, max_length=40)
+    password: str
 
 
-class UserRegister(SQLModel):
-    email: EmailStr = Field(max_length=255)
-    password: str = Field(min_length=8, max_length=40)
-    full_name: str | None = Field(default=None, max_length=255)
+# TODO replace email str with EmailStr when sqlmodel supports it
+class UserCreateOpen(SQLModel):
+    email: str
+    password: str
+    full_name: str | None = None
 
 
 # Properties to receive via API on update, all are optional
+# TODO replace email str with EmailStr when sqlmodel supports it
 class UserUpdate(UserBase):
-    email: EmailStr | None = Field(default=None, max_length=255)  # type: ignore
-    password: str | None = Field(default=None, min_length=8, max_length=40)
+    email: str | None = None  # type: ignore
+    password: str | None = None
 
 
+# TODO replace email str with EmailStr when sqlmodel supports it
 class UserUpdateMe(SQLModel):
-    full_name: str | None = Field(default=None, max_length=255)
-    email: EmailStr | None = Field(default=None, max_length=255)
+    full_name: str | None = None
+    email: str | None = None
 
 
 class UpdatePassword(SQLModel):
-    current_password: str = Field(min_length=8, max_length=40)
-    new_password: str = Field(min_length=8, max_length=40)
+    current_password: str
+    new_password: str
 
 
 # Database model, database table inferred from class name
 class User(UserBase, table=True):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     hashed_password: str
-    items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
+    items: list["Item"] = Relationship(back_populates="owner")
 
 
 # Properties to return via API, id is always required
-class UserPublic(UserBase):
-    id: uuid.UUID
+class UserOut(UserBase):
+    id: int
 
 
-class UsersPublic(SQLModel):
-    data: list[UserPublic]
+class UsersOut(SQLModel):
+    data: list[UserOut]
     count: int
 
 
 # Shared properties
 class ItemBase(SQLModel):
-    title: str = Field(min_length=1, max_length=255)
-    description: str | None = Field(default=None, max_length=255)
+    title: str
+    description: str | None = None
 
 
 # Properties to receive on item creation
 class ItemCreate(ItemBase):
-    pass
+    title: str
 
 
 # Properties to receive on item update
 class ItemUpdate(ItemBase):
-    title: str | None = Field(default=None, min_length=1, max_length=255)  # type: ignore
+    title: str | None = None  # type: ignore
 
 
 # Database model, database table inferred from class name
 class Item(ItemBase, table=True):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    title: str = Field(max_length=255)
-    owner_id: uuid.UUID = Field(
-        foreign_key="user.id", nullable=False, ondelete="CASCADE"
-    )
+    id: int | None = Field(default=None, primary_key=True)
+    title: str
+    owner_id: int | None = Field(default=None, foreign_key="user.id", nullable=False)
     owner: User | None = Relationship(back_populates="items")
 
 
 # Properties to return via API, id is always required
-class ItemPublic(ItemBase):
-    id: uuid.UUID
-    owner_id: uuid.UUID
+class ItemOut(ItemBase):
+    id: int
+    owner_id: int
 
 
-class ItemsPublic(SQLModel):
-    data: list[ItemPublic]
+class ItemsOut(SQLModel):
+    data: list[ItemOut]
     count: int
 
 
@@ -106,9 +105,9 @@ class Token(SQLModel):
 
 # Contents of JWT token
 class TokenPayload(SQLModel):
-    sub: str | None = None
+    sub: int | None = None
 
 
 class NewPassword(SQLModel):
     token: str
-    new_password: str = Field(min_length=8, max_length=40)
+    new_password: str

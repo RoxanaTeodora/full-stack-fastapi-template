@@ -1,14 +1,15 @@
+import React from 'react'
 import {
   Button,
   Container,
   Heading,
   Text,
   useDisclosure,
-} from "@chakra-ui/react"
+} from '@chakra-ui/react'
 
-import DeleteConfirmation from "./DeleteConfirmation"
+import DeleteConfirmation from './DeleteConfirmation'
 
-const DeleteAccount = () => {
+const DeleteAccount: React.FC = () => {
   const confirmationModal = useDisclosure()
 
   return (
@@ -21,7 +22,13 @@ const DeleteAccount = () => {
           Permanently delete your data and everything associated with your
           account.
         </Text>
-        <Button variant="danger" mt={4} onClick={confirmationModal.onOpen}>
+        <Button
+          bg="ui.danger"
+          color="white"
+          _hover={{ opacity: 0.8 }}
+          mt={4}
+          onClick={confirmationModal.onOpen}
+        >
           Delete
         </Button>
         <DeleteConfirmation

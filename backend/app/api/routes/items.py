@@ -1,16 +1,15 @@
-import uuid
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
-from app.models import Item, ItemCreate, ItemPublic, ItemsPublic, ItemUpdate, Message
+from app.models import Item, ItemCreate, ItemOut, ItemsOut, ItemUpdate, Message
 
 router = APIRouter()
 
 
-@router.get("/", response_model=ItemsPublic)
+@router.get("/", response_model=ItemsOut)
 def read_items(
     session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
 ) -> Any:
@@ -19,17 +18,17 @@ def read_items(
     """
 
     if current_user.is_superuser:
-        count_statement = select(func.count()).select_from(Item)
-        count = session.exec(count_statement).one()
+        statment = select(func.count()).select_from(Item)
+        count = session.exec(statment).one()
         statement = select(Item).offset(skip).limit(limit)
         items = session.exec(statement).all()
     else:
-        count_statement = (
+        statment = (
             select(func.count())
             .select_from(Item)
             .where(Item.owner_id == current_user.id)
         )
-        count = session.exec(count_statement).one()
+        count = session.exec(statment).one()
         statement = (
             select(Item)
             .where(Item.owner_id == current_user.id)
@@ -38,11 +37,11 @@ def read_items(
         )
         items = session.exec(statement).all()
 
-    return ItemsPublic(data=items, count=count)
+    return ItemsOut(data=items, count=count)
 
 
-@router.get("/{id}", response_model=ItemPublic)
-def read_item(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> Any:
+@router.get("/{id}", response_model=ItemOut)
+def read_item(session: SessionDep, current_user: CurrentUser, id: int) -> Any:
     """
     Get item by ID.
     """
@@ -54,7 +53,7 @@ def read_item(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> 
     return item
 
 
-@router.post("/", response_model=ItemPublic)
+@router.post("/", response_model=ItemOut)
 def create_item(
     *, session: SessionDep, current_user: CurrentUser, item_in: ItemCreate
 ) -> Any:
@@ -68,13 +67,9 @@ def create_item(
     return item
 
 
-@router.put("/{id}", response_model=ItemPublic)
+@router.put("/{id}", response_model=ItemOut)
 def update_item(
-    *,
-    session: SessionDep,
-    current_user: CurrentUser,
-    id: uuid.UUID,
-    item_in: ItemUpdate,
+    *, session: SessionDep, current_user: CurrentUser, id: int, item_in: ItemUpdate
 ) -> Any:
     """
     Update an item.
@@ -93,9 +88,7 @@ def update_item(
 
 
 @router.delete("/{id}")
-def delete_item(
-    session: SessionDep, current_user: CurrentUser, id: uuid.UUID
-) -> Message:
+def delete_item(session: SessionDep, current_user: CurrentUser, id: int) -> Message:
     """
     Delete an item.
     """

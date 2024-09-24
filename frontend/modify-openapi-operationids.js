@@ -1,36 +1,29 @@
-import * as fs from "node:fs"
+import * as fs from "fs";
 
-async function modifyOpenAPIFile(filePath) {
-  try {
-    const data = await fs.promises.readFile(filePath)
-    const openapiContent = JSON.parse(data)
+const filePath = "./openapi.json";
 
-    const paths = openapiContent.paths
-    for (const pathKey of Object.keys(paths)) {
-      const pathData = paths[pathKey]
-      for (const method of Object.keys(pathData)) {
-        const operation = pathData[method]
-        if (operation.tags && operation.tags.length > 0) {
-          const tag = operation.tags[0]
-          const operationId = operation.operationId
-          const toRemove = `${tag}-`
-          if (operationId.startsWith(toRemove)) {
-            const newOperationId = operationId.substring(toRemove.length)
-            operation.operationId = newOperationId
-          }
+fs.readFile(filePath, (err, data) => {
+  const openapiContent = JSON.parse(data);
+  if (err) throw err;
+
+  const paths = openapiContent.paths;
+
+  Object.keys(paths).forEach((pathKey) => {
+    const pathData = paths[pathKey];
+    Object.keys(pathData).forEach((method) => {
+      const operation = pathData[method];
+      if (operation.tags && operation.tags.length > 0) {
+        const tag = operation.tags[0];
+        const operationId = operation.operationId;
+        const toRemove = `${tag}-`;
+        if (operationId.startsWith(toRemove)) {
+          const newOperationId = operationId.substring(toRemove.length);
+          operation.operationId = newOperationId;
         }
       }
-    }
-
-    await fs.promises.writeFile(
-      filePath,
-      JSON.stringify(openapiContent, null, 2),
-    )
-    console.log("File successfully modified")
-  } catch (err) {
-    console.error("Error:", err)
-  }
-}
-
-const filePath = "./openapi.json"
-modifyOpenAPIFile(filePath)
+    });
+  });
+  fs.writeFile(filePath, JSON.stringify(openapiContent, null, 2), (err) => {
+    if (err) throw err;
+  });
+});

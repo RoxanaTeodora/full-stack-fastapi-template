@@ -1,3 +1,4 @@
+import React from 'react'
 import {
   Box,
   IconButton,
@@ -5,14 +6,14 @@ import {
   MenuButton,
   MenuItem,
   MenuList,
-} from "@chakra-ui/react"
-import { Link } from "@tanstack/react-router"
-import { FaUserAstronaut } from "react-icons/fa"
-import { FiLogOut, FiUser } from "react-icons/fi"
+} from '@chakra-ui/react'
+import { FaUserAlt } from 'react-icons/fa'
+import { FiLogOut, FiUser } from 'react-icons/fi'
 
-import useAuth from "../../hooks/useAuth"
+import useAuth from '../../hooks/useAuth'
+import { Link } from '@tanstack/react-router'
 
-const UserMenu = () => {
+const UserMenu: React.FC = () => {
   const { logout } = useAuth()
 
   const handleLogout = async () => {
@@ -23,7 +24,7 @@ const UserMenu = () => {
     <>
       {/* Desktop */}
       <Box
-        display={{ base: "none", md: "block" }}
+        display={{ base: 'none', md: 'block' }}
         position="fixed"
         top={4}
         right={4}
@@ -32,10 +33,9 @@ const UserMenu = () => {
           <MenuButton
             as={IconButton}
             aria-label="Options"
-            icon={<FaUserAstronaut color="white" fontSize="18px" />}
+            icon={<FaUserAlt color="white" fontSize="18px" />}
             bg="ui.main"
             isRound
-            data-testid="user-menu"
           />
           <MenuList>
             <MenuItem icon={<FiUser fontSize="18px" />} as={Link} to="settings">

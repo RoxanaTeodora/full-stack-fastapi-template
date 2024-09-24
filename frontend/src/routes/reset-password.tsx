@@ -7,26 +7,25 @@ import {
   Heading,
   Input,
   Text,
-} from "@chakra-ui/react"
-import { useMutation } from "@tanstack/react-query"
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
-import { type SubmitHandler, useForm } from "react-hook-form"
+} from '@chakra-ui/react'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { SubmitHandler, useForm } from 'react-hook-form'
+import { useMutation } from 'react-query'
 
-import { type ApiError, LoginService, type NewPassword } from "../client"
-import { isLoggedIn } from "../hooks/useAuth"
-import useCustomToast from "../hooks/useCustomToast"
-import { confirmPasswordRules, handleError, passwordRules } from "../utils"
+import { ApiError, LoginService, NewPassword } from '../client'
+import { isLoggedIn } from '../hooks/useAuth'
+import useCustomToast from '../hooks/useCustomToast'
 
 interface NewPasswordForm extends NewPassword {
   confirm_password: string
 }
 
-export const Route = createFileRoute("/reset-password")({
+export const Route = createFileRoute('/reset-password')({
   component: ResetPassword,
   beforeLoad: async () => {
     if (isLoggedIn()) {
       throw redirect({
-        to: "/",
+        to: '/',
       })
     }
   },
@@ -40,32 +39,31 @@ function ResetPassword() {
     reset,
     formState: { errors },
   } = useForm<NewPasswordForm>({
-    mode: "onBlur",
-    criteriaMode: "all",
+    mode: 'onBlur',
+    criteriaMode: 'all',
     defaultValues: {
-      new_password: "",
+      new_password: '',
     },
   })
   const showToast = useCustomToast()
   const navigate = useNavigate()
 
   const resetPassword = async (data: NewPassword) => {
-    const token = new URLSearchParams(window.location.search).get("token")
-    if (!token) return
+    const token = new URLSearchParams(window.location.search).get('token')
     await LoginService.resetPassword({
-      requestBody: { new_password: data.new_password, token: token },
+      requestBody: { new_password: data.new_password, token: token! },
     })
   }
 
-  const mutation = useMutation({
-    mutationFn: resetPassword,
+  const mutation = useMutation(resetPassword, {
     onSuccess: () => {
-      showToast("Success!", "Password updated successfully.", "success")
+      showToast('Success!', 'Password updated.', 'success')
       reset()
-      navigate({ to: "/login" })
+      navigate({ to: '/login' })
     },
     onError: (err: ApiError) => {
-      handleError(err, showToast)
+      const errDetail = err.body.detail
+      showToast('Something went wrong.', `${errDetail}`, 'error')
     },
   })
 
@@ -94,7 +92,13 @@ function ResetPassword() {
         <FormLabel htmlFor="password">Set Password</FormLabel>
         <Input
           id="password"
-          {...register("new_password", passwordRules())}
+          {...register('new_password', {
+            required: 'Password is required',
+            minLength: {
+              value: 8,
+              message: 'Password must be at least 8 characters',
+            },
+          })}
           placeholder="Password"
           type="password"
         />
@@ -106,7 +110,12 @@ function ResetPassword() {
         <FormLabel htmlFor="confirm_password">Confirm Password</FormLabel>
         <Input
           id="confirm_password"
-          {...register("confirm_password", confirmPasswordRules(getValues))}
+          {...register('confirm_password', {
+            required: 'Please confirm your password',
+            validate: (value) =>
+              value === getValues().new_password ||
+              'The passwords do not match',
+          })}
           placeholder="Password"
           type="password"
         />
@@ -114,9 +123,16 @@ function ResetPassword() {
           <FormErrorMessage>{errors.confirm_password.message}</FormErrorMessage>
         )}
       </FormControl>
-      <Button variant="primary" type="submit">
+      <Button
+        bg="ui.main"
+        color="white"
+        _hover={{ opacity: 0.8 }}
+        type="submit"
+      >
         Reset Password
       </Button>
     </Container>
   )
 }
+
+export default ResetPassword

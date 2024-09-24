@@ -1,3 +1,4 @@
+import React from 'react'
 import {
   AlertDialog,
   AlertDialogBody,
@@ -6,22 +7,20 @@ import {
   AlertDialogHeader,
   AlertDialogOverlay,
   Button,
-} from "@chakra-ui/react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import React from "react"
-import { useForm } from "react-hook-form"
+} from '@chakra-ui/react'
+import { useForm } from 'react-hook-form'
+import { useMutation, useQueryClient } from 'react-query'
 
-import { type ApiError, UsersService } from "../../client"
-import useAuth from "../../hooks/useAuth"
-import useCustomToast from "../../hooks/useCustomToast"
-import { handleError } from "../../utils"
+import { ApiError, UserOut, UsersService } from '../../client'
+import useAuth from '../../hooks/useAuth'
+import useCustomToast from '../../hooks/useCustomToast'
 
 interface DeleteProps {
   isOpen: boolean
   onClose: () => void
 }
 
-const DeleteConfirmation = ({ isOpen, onClose }: DeleteProps) => {
+const DeleteConfirmation: React.FC<DeleteProps> = ({ isOpen, onClose }) => {
   const queryClient = useQueryClient()
   const showToast = useCustomToast()
   const cancelRef = React.useRef<HTMLButtonElement | null>(null)
@@ -29,29 +28,34 @@ const DeleteConfirmation = ({ isOpen, onClose }: DeleteProps) => {
     handleSubmit,
     formState: { isSubmitting },
   } = useForm()
+  const currentUser = queryClient.getQueryData<UserOut>('currentUser')
   const { logout } = useAuth()
 
-  const mutation = useMutation({
-    mutationFn: () => UsersService.deleteUserMe(),
+  const deleteCurrentUser = async (id: number) => {
+    await UsersService.deleteUser({ userId: id })
+  }
+
+  const mutation = useMutation(deleteCurrentUser, {
     onSuccess: () => {
       showToast(
-        "Success",
-        "Your account has been successfully deleted.",
-        "success",
+        'Success',
+        'Your account has been successfully deleted.',
+        'success',
       )
       logout()
       onClose()
     },
     onError: (err: ApiError) => {
-      handleError(err, showToast)
+      const errDetail = err.body.detail
+      showToast('Something went wrong.', `${errDetail}`, 'error')
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["currentUser"] })
+      queryClient.invalidateQueries('currentUser')
     },
   })
 
   const onSubmit = async () => {
-    mutation.mutate()
+    mutation.mutate(currentUser!.id)
   }
 
   return (
@@ -60,7 +64,7 @@ const DeleteConfirmation = ({ isOpen, onClose }: DeleteProps) => {
         isOpen={isOpen}
         onClose={onClose}
         leastDestructiveRef={cancelRef}
-        size={{ base: "sm", md: "md" }}
+        size={{ base: 'sm', md: 'md' }}
         isCentered
       >
         <AlertDialogOverlay>
@@ -68,7 +72,7 @@ const DeleteConfirmation = ({ isOpen, onClose }: DeleteProps) => {
             <AlertDialogHeader>Confirmation Required</AlertDialogHeader>
 
             <AlertDialogBody>
-              All your account data will be{" "}
+              All your account data will be{' '}
               <strong>permanently deleted.</strong> If you are sure, please
               click <strong>"Confirm"</strong> to proceed. This action cannot be
               undone.

@@ -1,3 +1,4 @@
+import React from 'react'
 import {
   Button,
   FormControl,
@@ -11,26 +12,20 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-} from "@chakra-ui/react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { type SubmitHandler, useForm } from "react-hook-form"
+} from '@chakra-ui/react'
+import { SubmitHandler, useForm } from 'react-hook-form'
 
-import {
-  type ApiError,
-  type ItemPublic,
-  type ItemUpdate,
-  ItemsService,
-} from "../../client"
-import useCustomToast from "../../hooks/useCustomToast"
-import { handleError } from "../../utils"
+import { useMutation, useQueryClient } from 'react-query'
+import { ApiError, ItemOut, ItemUpdate, ItemsService } from '../../client'
+import useCustomToast from '../../hooks/useCustomToast'
 
 interface EditItemProps {
-  item: ItemPublic
+  item: ItemOut
   isOpen: boolean
   onClose: () => void
 }
 
-const EditItem = ({ item, isOpen, onClose }: EditItemProps) => {
+const EditItem: React.FC<EditItemProps> = ({ item, isOpen, onClose }) => {
   const queryClient = useQueryClient()
   const showToast = useCustomToast()
   const {
@@ -39,23 +34,26 @@ const EditItem = ({ item, isOpen, onClose }: EditItemProps) => {
     reset,
     formState: { isSubmitting, errors, isDirty },
   } = useForm<ItemUpdate>({
-    mode: "onBlur",
-    criteriaMode: "all",
+    mode: 'onBlur',
+    criteriaMode: 'all',
     defaultValues: item,
   })
 
-  const mutation = useMutation({
-    mutationFn: (data: ItemUpdate) =>
-      ItemsService.updateItem({ id: item.id, requestBody: data }),
+  const updateItem = async (data: ItemUpdate) => {
+    await ItemsService.updateItem({ id: item.id, requestBody: data })
+  }
+
+  const mutation = useMutation(updateItem, {
     onSuccess: () => {
-      showToast("Success!", "Item updated successfully.", "success")
+      showToast('Success!', 'Item updated successfully.', 'success')
       onClose()
     },
     onError: (err: ApiError) => {
-      handleError(err, showToast)
+      const errDetail = err.body.detail
+      showToast('Something went wrong.', `${errDetail}`, 'error')
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["items"] })
+      queryClient.invalidateQueries('items')
     },
   })
 
@@ -73,7 +71,7 @@ const EditItem = ({ item, isOpen, onClose }: EditItemProps) => {
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        size={{ base: "sm", md: "md" }}
+        size={{ base: 'sm', md: 'md' }}
         isCentered
       >
         <ModalOverlay />
@@ -85,8 +83,8 @@ const EditItem = ({ item, isOpen, onClose }: EditItemProps) => {
               <FormLabel htmlFor="title">Title</FormLabel>
               <Input
                 id="title"
-                {...register("title", {
-                  required: "Title is required",
+                {...register('title', {
+                  required: 'Title is required',
                 })}
                 type="text"
               />
@@ -98,7 +96,7 @@ const EditItem = ({ item, isOpen, onClose }: EditItemProps) => {
               <FormLabel htmlFor="description">Description</FormLabel>
               <Input
                 id="description"
-                {...register("description")}
+                {...register('description')}
                 placeholder="Description"
                 type="text"
               />

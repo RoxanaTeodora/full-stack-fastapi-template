@@ -1,3 +1,4 @@
+import React from 'react'
 import {
   Button,
   FormControl,
@@ -11,20 +12,19 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-} from "@chakra-ui/react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { type SubmitHandler, useForm } from "react-hook-form"
+} from '@chakra-ui/react'
+import { SubmitHandler, useForm } from 'react-hook-form'
+import { useMutation, useQueryClient } from 'react-query'
 
-import { type ApiError, type ItemCreate, ItemsService } from "../../client"
-import useCustomToast from "../../hooks/useCustomToast"
-import { handleError } from "../../utils"
+import { ApiError, ItemCreate, ItemsService } from '../../client'
+import useCustomToast from '../../hooks/useCustomToast'
 
 interface AddItemProps {
   isOpen: boolean
   onClose: () => void
 }
 
-const AddItem = ({ isOpen, onClose }: AddItemProps) => {
+const AddItem: React.FC<AddItemProps> = ({ isOpen, onClose }) => {
   const queryClient = useQueryClient()
   const showToast = useCustomToast()
   const {
@@ -33,27 +33,30 @@ const AddItem = ({ isOpen, onClose }: AddItemProps) => {
     reset,
     formState: { errors, isSubmitting },
   } = useForm<ItemCreate>({
-    mode: "onBlur",
-    criteriaMode: "all",
+    mode: 'onBlur',
+    criteriaMode: 'all',
     defaultValues: {
-      title: "",
-      description: "",
+      title: '',
+      description: '',
     },
   })
 
-  const mutation = useMutation({
-    mutationFn: (data: ItemCreate) =>
-      ItemsService.createItem({ requestBody: data }),
+  const addItem = async (data: ItemCreate) => {
+    await ItemsService.createItem({ requestBody: data })
+  }
+
+  const mutation = useMutation(addItem, {
     onSuccess: () => {
-      showToast("Success!", "Item created successfully.", "success")
+      showToast('Success!', 'Item created successfully.', 'success')
       reset()
       onClose()
     },
     onError: (err: ApiError) => {
-      handleError(err, showToast)
+      const errDetail = err.body.detail
+      showToast('Something went wrong.', `${errDetail}`, 'error')
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["items"] })
+      queryClient.invalidateQueries('items')
     },
   })
 
@@ -66,7 +69,7 @@ const AddItem = ({ isOpen, onClose }: AddItemProps) => {
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        size={{ base: "sm", md: "md" }}
+        size={{ base: 'sm', md: 'md' }}
         isCentered
       >
         <ModalOverlay />
@@ -78,8 +81,8 @@ const AddItem = ({ isOpen, onClose }: AddItemProps) => {
               <FormLabel htmlFor="title">Title</FormLabel>
               <Input
                 id="title"
-                {...register("title", {
-                  required: "Title is required.",
+                {...register('title', {
+                  required: 'Title is required.',
                 })}
                 placeholder="Title"
                 type="text"
@@ -92,7 +95,7 @@ const AddItem = ({ isOpen, onClose }: AddItemProps) => {
               <FormLabel htmlFor="description">Description</FormLabel>
               <Input
                 id="description"
-                {...register("description")}
+                {...register('description')}
                 placeholder="Description"
                 type="text"
               />

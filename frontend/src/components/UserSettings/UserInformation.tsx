@@ -1,3 +1,4 @@
+import React, { useState } from 'react'
 import {
   Box,
   Button,
@@ -10,24 +11,17 @@ import {
   Input,
   Text,
   useColorModeValue,
-} from "@chakra-ui/react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
-import { type SubmitHandler, useForm } from "react-hook-form"
+} from '@chakra-ui/react'
+import { SubmitHandler, useForm } from 'react-hook-form'
+import { useMutation, useQueryClient } from 'react-query'
 
-import {
-  type ApiError,
-  type UserPublic,
-  type UserUpdateMe,
-  UsersService,
-} from "../../client"
-import useAuth from "../../hooks/useAuth"
-import useCustomToast from "../../hooks/useCustomToast"
-import { emailPattern, handleError } from "../../utils"
+import { ApiError, UserOut, UserUpdateMe, UsersService } from '../../client'
+import useAuth from '../../hooks/useAuth'
+import useCustomToast from '../../hooks/useCustomToast'
 
-const UserInformation = () => {
+const UserInformation: React.FC = () => {
   const queryClient = useQueryClient()
-  const color = useColorModeValue("inherit", "ui.light")
+  const color = useColorModeValue('inherit', 'ui.white')
   const showToast = useCustomToast()
   const [editMode, setEditMode] = useState(false)
   const { user: currentUser } = useAuth()
@@ -37,9 +31,9 @@ const UserInformation = () => {
     reset,
     getValues,
     formState: { isSubmitting, errors, isDirty },
-  } = useForm<UserPublic>({
-    mode: "onBlur",
-    criteriaMode: "all",
+  } = useForm<UserOut>({
+    mode: 'onBlur',
+    criteriaMode: 'all',
     defaultValues: {
       full_name: currentUser?.full_name,
       email: currentUser?.email,
@@ -50,17 +44,21 @@ const UserInformation = () => {
     setEditMode(!editMode)
   }
 
-  const mutation = useMutation({
-    mutationFn: (data: UserUpdateMe) =>
-      UsersService.updateUserMe({ requestBody: data }),
+  const updateInfo = async (data: UserUpdateMe) => {
+    await UsersService.updateUserMe({ requestBody: data })
+  }
+
+  const mutation = useMutation(updateInfo, {
     onSuccess: () => {
-      showToast("Success!", "User updated successfully.", "success")
+      showToast('Success!', 'User updated successfully.', 'success')
     },
     onError: (err: ApiError) => {
-      handleError(err, showToast)
+      const errDetail = err.body.detail
+      showToast('Something went wrong.', `${errDetail}`, 'error')
     },
     onSettled: () => {
-      queryClient.invalidateQueries()
+      queryClient.invalidateQueries('users')
+      queryClient.invalidateQueries('currentUser')
     },
   })
 
@@ -75,15 +73,11 @@ const UserInformation = () => {
 
   return (
     <>
-      <Container maxW="full">
+      <Container maxW="full" as="form" onSubmit={handleSubmit(onSubmit)}>
         <Heading size="sm" py={4}>
           User Information
         </Heading>
-        <Box
-          w={{ sm: "full", md: "50%" }}
-          as="form"
-          onSubmit={handleSubmit(onSubmit)}
-        >
+        <Box w={{ sm: 'full', md: '50%' }}>
           <FormControl>
             <FormLabel color={color} htmlFor="name">
               Full name
@@ -91,20 +85,17 @@ const UserInformation = () => {
             {editMode ? (
               <Input
                 id="name"
-                {...register("full_name", { maxLength: 30 })}
+                {...register('full_name', { maxLength: 30 })}
                 type="text"
                 size="md"
-                w="auto"
               />
             ) : (
               <Text
                 size="md"
                 py={2}
-                color={!currentUser?.full_name ? "ui.dim" : "inherit"}
-                isTruncated
-                maxWidth="250px"
+                color={!currentUser?.full_name ? 'gray.400' : 'inherit'}
               >
-                {currentUser?.full_name || "N/A"}
+                {currentUser?.full_name || 'N/A'}
               </Text>
             )}
           </FormControl>
@@ -115,17 +106,19 @@ const UserInformation = () => {
             {editMode ? (
               <Input
                 id="email"
-                {...register("email", {
-                  required: "Email is required",
-                  pattern: emailPattern,
+                {...register('email', {
+                  required: 'Email is required',
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i,
+                    message: 'Invalid email address',
+                  },
                 })}
                 type="email"
                 size="md"
-                w="auto"
               />
             ) : (
-              <Text size="md" py={2} isTruncated maxWidth="250px">
-                {currentUser?.email}
+              <Text size="md" py={2}>
+                {currentUser!.email}
               </Text>
             )}
             {errors.email && (
@@ -136,11 +129,11 @@ const UserInformation = () => {
             <Button
               variant="primary"
               onClick={toggleEditMode}
-              type={editMode ? "button" : "submit"}
+              type={editMode ? 'button' : 'submit'}
               isLoading={editMode ? isSubmitting : false}
-              isDisabled={editMode ? !isDirty || !getValues("email") : false}
+              isDisabled={editMode ? !isDirty || !getValues('email') : false}
             >
-              {editMode ? "Save" : "Edit"}
+              {editMode ? 'Save' : 'Edit'}
             </Button>
             {editMode && (
               <Button onClick={onCancel} isDisabled={isSubmitting}>
